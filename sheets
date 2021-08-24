@@ -1,0 +1,27 @@
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials as SAC
+
+
+def next_available_row(sheet, cols_to_sample=2):
+    cols = sheet.range(1, 1, sheet.row_count, cols_to_sample)
+    return max([cell.row for cell in cols if cell.value]) + 1
+
+
+scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://spreadsheets.google.com/feeds',
+         'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive']
+
+creds = SAC.from_json_keyfile_name('Creds.json', scope)
+
+client = gspread.authorize(creds)
+
+sheets = client.open("Engenharia de Software – Desafio [Yuri Gabriel Sahão]").sheet1
+
+
+G = 4
+for c in range(4, next_available_row(sheets)):
+    G = c
+    formula = f'=if(G{G}="Exame Final",round((100-sum(D{G}:F{G})/3),0),0)'
+    sheets.update_cell(c, 8, formula)
+    formula = f'=IF(C{G}/60>0.25,"Reprovado por Falta",if(SUM(D{G}:F{G})/3>=70,"Aprovado",if(sum(D{G}:F{G})/3>=50,"Exame Final","Reprovado por Nota")))'
+    sheets.update_cell(c, 7, formula)
+
